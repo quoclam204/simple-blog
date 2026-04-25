@@ -10,10 +10,13 @@ export function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [resetMessage, setResetMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setResetMessage(null);
     setLoading(true);
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -36,6 +39,7 @@ export function LoginForm() {
   };
   const handleGitHubLogin = async () => {
     setError(null);
+    setResetMessage(null);
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "github",
@@ -47,11 +51,41 @@ export function LoginForm() {
       setError(error.message);
     }
   };
+  const handleResetPassword = async () => {
+    setError(null);
+    setResetMessage(null);
+    if (!email) {
+      setError("Vui lòng nhập email để nhận link đặt lại mật khẩu.");
+      return;
+    }
+    setResetLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/login?message=Đã%20gửi%20email%20đặt%20lại%20mật%20khẩu.`,
+      });
+      if (error) {
+        setError(error.message);
+        return;
+      }
+      setResetMessage(
+        "Đã gửi email đặt lại mật khẩu. Vui lòng kiểm tra hộp thư.",
+      );
+    } catch (err) {
+      setError("Có lỗi xảy ra. Vui lòng thử lại.");
+    } finally {
+      setResetLoading(false);
+    }
+  };
   return (
     <div className="mt-8 space-y-6">
       {error && (
         <div className="bg-red-50 text-red-500 p-3 rounded-md text-sm">
           {error}
+        </div>
+      )}
+      {resetMessage && (
+        <div className="bg-green-50 text-green-700 p-3 rounded-md text-sm">
+          {resetMessage}
         </div>
       )}
       {/* OAuth Buttons */}
@@ -121,6 +155,16 @@ text-gray-700"
 focus:border-blue-500"
             placeholder="••••••••"
           />
+        </div>
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={handleResetPassword}
+            disabled={resetLoading}
+            className="text-sm text-blue-600 hover:text-blue-500 disabled:opacity-50"
+          >
+            {resetLoading ? "Đang gửi..." : "Quên mật khẩu?"}
+          </button>
         </div>
         <button
           type="submit"
