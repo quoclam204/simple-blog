@@ -1,6 +1,7 @@
 import { createClient } from "@/app/lib/supabase/server";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import ReactMarkdown from "react-markdown";
 import { CommentForm } from "@/app/components/posts/comment-form";
 import { CommentList } from "@/app/components/posts/comment-list";
 interface PostPageProps {
@@ -81,9 +82,18 @@ export default async function PostPage({ params }: PostPageProps) {
           </div>
         </header>
         <div className="prose prose-lg max-w-none mb-12">
-          {post.content?.split("\n").map((paragraph: string, index: number) => (
-            <p key={index}>{paragraph}</p>
-          ))}
+          <ReactMarkdown
+            components={{
+              img: ({ className, ...props }) => (
+                <img
+                  {...props}
+                  className={`rounded-lg border border-gray-200 ${className ?? ""}`}
+                />
+              ),
+            }}
+          >
+            {post.content ?? ""}
+          </ReactMarkdown>
         </div>
       </article>
       {/* Comments Section */}

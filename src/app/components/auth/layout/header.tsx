@@ -17,6 +17,9 @@ export async function Header() {
             <Link href="/" className="text-gray-600 hover:text-gray900">
               Trang chủ
             </Link>
+            <Link href="/search" className="text-gray-600 hover:text-gray-900">
+              Tìm kiếm
+            </Link>
             {user ? (
               <>
                 <Link
@@ -24,6 +27,12 @@ export async function Header() {
                   className="text-gray-600 hover:text-gray-900"
                 >
                   Dashboard
+                </Link>
+                <Link
+                  href="/profile"
+                  className="text-gray-600 hover:text-gray-900"
+                >
+                  Hồ sơ
                 </Link>
                 <form action={logout}>
                   <button

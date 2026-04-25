@@ -1,8 +1,36 @@
 import { createClient } from "@/app/lib/supabase/server";
+import { LikeButton } from "@/app/components/posts/like-button";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 interface PostPageProps {
   params: Promise<{ slug: string }>;
+}
+
+function renderContent(content: string | null) {
+  if (!content) {
+    return null;
+  }
+
+  return content.split("\n").map((line, index) => {
+    const trimmed = line.trim();
+    const imageMatch = /^!\[(.*)\]\((.*)\)$/.exec(trimmed);
+
+    if (imageMatch) {
+      const altText = imageMatch[1] || "Image";
+      const imageUrl = imageMatch[2];
+
+      return (
+        <img
+          key={`image-${index}`}
+          src={imageUrl}
+          alt={altText}
+          className="my-4 rounded-lg border border-gray-200"
+        />
+      );
+    }
+
+    return <p key={`line-${index}`}>{line}</p>;
+  });
 }
 export async function generateMetadata({
   params,
@@ -41,6 +69,28 @@ export default async function PostPage({ params }: PostPageProps) {
   if (error || !post) {
     notFound();
   }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { count: likesCount } = await supabase
+    .from("likes")
+    .select("post_id", { count: "exact", head: true })
+    .eq("post_id", post.id);
+
+  let hasLiked = false;
+  if (user) {
+    const { data: likeRow } = await supabase
+      .from("likes")
+      .select("user_id")
+      .eq("post_id", post.id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    hasLiked = !!likeRow;
+  }
+
   return (
     <main className="max-w-3xl mx-auto px-4 py-8">
       <article>
@@ -60,12 +110,18 @@ export default async function PostPage({ params }: PostPageProps) {
                 : ""}
             </time>
           </div>
+          <div className="mt-4">
+            <LikeButton
+              postId={post.id}
+              initialCount={likesCount ?? 0}
+              initialLiked={hasLiked}
+              userId={user?.id ?? null}
+            />
+          </div>
         </header>
         <div className="prose prose-lg max-w-none">
           {/* Render markdown content */}
-          {post.content?.split("\n").map((paragraph: string, index: number) => (
-            <p key={index}>{paragraph}</p>
-          ))}
+          {renderContent(post.content)}
         </div>
       </article>
     </main>
